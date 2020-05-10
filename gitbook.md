@@ -3,7 +3,7 @@
 ### 사용법
 
 * Save 후 Merge 까지 해야 [https://justburrow.gitbook.io/street-cat-study](https://justburrow.gitbook.io/street-cat-study/)에서 확인할 수 있다.
-  * GitHub 연동을 시켜놓고 보니, Merge는 squash 같아 보인다.
+  * GitHub 연동을 시켜놓고 보니, Merge는 squash 같아 보인다. 이건 GitBook에서 GitHub 쪽으로 동기화 할때만 그럴지도.
 * GitBook에서 직접 클론할 수 있는 방법은 없고, GitHub와 연동해야 하는 듯. [https://github.com/JustBurrow/street-cat-study](https://github.com/JustBurrow/street-cat-study)
   * GitHub 연동하면 연동한 프로젝트의 wiki와 연동되는 건가 했는데, 코드 저장소와 연동된다.
 * 기본적으로 GitHub wiki의 파일 구성을 따르는 듯. 디렉토리는 사용 불가?
