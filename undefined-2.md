@@ -90,3 +90,55 @@ public class CatService {
 
 * 기능 : 장비가 업로드한 csv 파일을 읽어서 고양이가 장비를 사용한 내역을 고양이 관리 시스템에 저장한다.
 
+#### 업로드 디렉토리 모니터
+
+장비가 데이터 파일을 업로드 하는 디렉토리를 모니터링 하다가, 새로운 파일이 생기면 처리 로직을 호출한다.
+
+`postConstruct()`에서 바로 모니터링 루프를 돌면 메서드 실행이 끝나지 않기 때문에, 새로 쓰레드를 만들어서 실행한다.
+
+```java
+@Component
+public class InputDirectoryMonitor {
+  @Autowired
+  private BatchProperties properties;
+
+  @Autowired
+  private BatchService service;
+
+  private WatchService watchService;
+  private Thread listener;
+
+  @PostConstruct
+  private void postConstruct() throws IOException {
+    this.watchService = FileSystems.getDefault().newWatchService();
+    Path path = Paths.get(this.properties.getInputDirectory().toURI());
+
+    path.register(this.watchService, ENTRY_CREATE, ENTRY_MODIFY);
+
+    this.listener = new Thread(this::monitor, InputDirectoryMonitor.class.getName() + ".listener");
+    this.listener.start();
+  }
+
+  @PreDestroy
+  private void preDestroy() {
+    this.listener.interrupt();
+  }
+
+  private void monitor() {
+    WatchKey key;
+    try {
+      while ((key = this.watchService.take()) != null) {
+        key.pollEvents()
+            .forEach(event -> {
+              File file = new File(this.properties.getInputDirectory(), event.context().toString());
+              Future<BatchResult> result = this.service.process(file);
+            });
+        key.reset();
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+}
+```
+
