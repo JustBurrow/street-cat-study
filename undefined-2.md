@@ -142,3 +142,35 @@ public class InputDirectoryMonitor {
 }
 ```
 
+#### CSV 로딩
+
+장비가 업로드한 csv 파일을 읽어 인스턴스로 변환한다.
+
+```java
+@Service
+public class UseDataReader {
+  private CSVFormat format;
+  private DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+  @PostConstruct
+  private void postConstruct() {
+    this.format = CSVFormat.DEFAULT;
+  }
+
+  public List<UseData> load(File file) {
+    try (BufferedReader reader = Files.newBufferedReader(file.toPath())) {
+      return stream(this.format.parse(reader).spliterator(), false)
+                 .map(record -> new UseData(
+                     UUID.fromString(record.get(0)),
+                     UUID.fromString(record.get(1)),
+                     DeviceType.valueOf(parseInt(record.get(2))),
+                     parseInt(record.get(3)),
+                     LocalDateTime.parse(record.get(4), this.dateTimeFormatter)))
+                 .collect(toList());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+}
+```
+
