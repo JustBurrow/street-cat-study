@@ -178,6 +178,68 @@ public class UseDataReader {
 }
 ```
 
+### 사용량 JPA 엔티티
+
+장비 사용량 정보를 저장할 때 사용할 엔티티.
+
+code : [Use](https://github.com/JustBurrow/street-cat-study-code/blob/master/batch/src/main/java/kr/lul/street/cat/study/batch/data/Use.java)
+
+```java
+@Entity(name = "Use")
+@Table(name = "uses",
+    indexes = @Index(name = "idx_uses", columnList = "chip_id ASC, device_id ASC, measured_at ASC"))
+public class Use {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "id", nullable = false, insertable = false, updatable = false)
+  private long id;
+  @Column(name = "chip_id", nullable = false, updatable = false)
+  private UUID chipId;
+  @Column(name = "device_id", nullable = false, updatable = false)
+  private UUID deviceId;
+  @Column(name = "type", nullable = false, updatable = false)
+  @Enumerated(EnumType.STRING)
+  private DeviceType type;
+  @Column(name = "value", nullable = false, updatable = false)
+  private int value;
+  @Column(name = "measured_at", nullable = false, updatable = false)
+  private LocalDateTime measuredAt;
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private LocalDateTime createdAt;
+
+  public Use() {// JPA only
+  }
+
+  public Use(UUID chipId, UUID deviceId, DeviceType type, int value, LocalDateTime measuredAt) {
+    this.chipId = chipId;
+    this.deviceId = deviceId;
+    this.type = type;
+    this.value = value;
+    this.measuredAt = measuredAt;
+  }
+
+  @PrePersist
+  private void prePersist() {
+    this.createdAt = LocalDateTime.now().withNano(0);
+  }
+
+// 생략 ...
+
+  @Override
+  public String toString() {
+    return new StringBuilder(Use.class.getSimpleName())
+               .append("{id=").append(this.id)
+               .append(", chipId=").append(this.chipId)
+               .append(", deviceId=").append(this.deviceId)
+               .append(", type=").append(this.type)
+               .append(", value=").append(this.value)
+               .append(", measuredAt=").append(this.measuredAt)
+               .append(", createdAt=").append(this.createdAt)
+               .append('}').toString();
+  }
+}
+```
+
 ### 배치 로직
 
 파일에서 읽은 데이터를 검증한 후 DB에 저장한다.
