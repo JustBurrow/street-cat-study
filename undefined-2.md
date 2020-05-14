@@ -96,6 +96,8 @@ public class CatService {
 
 `postConstruct()`에서 바로 모니터링 루프를 돌면 메서드 실행이 끝나지 않기 때문에, 새로 쓰레드를 만들어서 실행한다.
 
+code : [InputDirectoryMonitor](https://github.com/JustBurrow/street-cat-study-code/blob/master/batch/src/main/java/kr/lul/street/cat/study/batch/monitor/InputDirectoryMonitor.java)
+
 ```java
 @Component
 public class InputDirectoryMonitor {
@@ -146,6 +148,8 @@ public class InputDirectoryMonitor {
 
 장비가 업로드한 csv 파일을 읽어 인스턴스로 변환한다.
 
+code : [UseDataReader](https://github.com/JustBurrow/street-cat-study-code/blob/master/batch/src/main/java/kr/lul/street/cat/study/batch/service/UseDataReader.java)
+
 ```java
 @Service
 public class UseDataReader {
@@ -170,6 +174,48 @@ public class UseDataReader {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+}
+```
+
+### 배치 로직
+
+파일에서 읽은 데이터를 검증한 후 DB에 저장한다.
+
+code : [BatchService](https://github.com/JustBurrow/street-cat-study-code/blob/master/batch/src/main/java/kr/lul/street/cat/study/batch/service/BatchService.java)
+
+```java
+@Service
+public class BatchService {
+  @Autowired
+  private UseDataReader reader;
+  @Autowired
+  private ChipService chipService;
+  @Autowired
+  private DeviceService deviceService;
+  @Autowired
+  private UseRepository useRepository;
+
+  @Async
+  public Future<BatchResult> process(File file) {
+    Instant start = Instant.now();
+    AtomicInteger dataCounter = new AtomicInteger();
+    AtomicInteger validCounter = new AtomicInteger();
+    this.reader.load(file)
+        .stream()
+        .peek(useData -> dataCounter.incrementAndGet())
+        .filter(useData -> this.chipService.validate(useData.getChipId()))
+        .filter(useData -> this.deviceService.validate(useData.getDeviceId()))
+        .forEach(useData -> {
+          Use use = new Use(useData.getChipId(), useData.getDeviceId(),
+              useData.getType(), useData.getValue(),
+              useData.getMeasuredAt());
+          use = this.useRepository.save(use);
+          int i = validCounter.incrementAndGet();
+        });
+
+    BatchResult result = new BatchResult(file, dataCounter.get(), validCounter.get(), Duration.between(start, Instant.now()));
+    return new AsyncResult<>(result);
   }
 }
 ```
